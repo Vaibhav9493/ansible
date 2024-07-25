@@ -1,0 +1,28 @@
+---
+- name: Get AMI corresponding to snapshot
+  set_fact:
+    ami: "{{ ami_facts.images | selectattr('image_id', 'equalto', snapshot.description | regex_replace('.*\\b(ami-[a-f0-9]+)\\b.*', '\\1')) | first }}"
+
+- name: Debug AMI Tags
+  debug:
+    var: ami.tags
+  when: ami is defined
+
+- name: Filter out AWS reserved tags
+  set_fact:
+    filtered_tags: "{{ ami.tags | dict2items | rejectattr('key', 'search', '^aws:') | items2dict }}"
+  when: ami is defined
+
+- name: Debug filtered tags
+  debug:
+    var: filtered_tags
+  when: filtered_tags is defined
+
+- name: Apply tags to snapshot
+  amazon.aws.ec2_tag:
+    resource: "{{ snapshot.snapshot_id }}"
+    region: "{{ region }}"
+    state: present
+    tags: "{{ filtered_tags }}"
+  when: filtered_tags is defined
+

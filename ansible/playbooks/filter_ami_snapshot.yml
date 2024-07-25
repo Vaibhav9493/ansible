@@ -1,0 +1,13 @@
+---
+- name: List and Delete AMIs except managed by DLM
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  vars:
+    region: "us-east-1"
+    filters: {"image-type": "machine", "is-public": "false"}
+
+  roles:
+    - role: find_ami
+    - role: filter_amis

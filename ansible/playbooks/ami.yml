@@ -1,0 +1,27 @@
+---
+- name: List and Delete AMIs except managed by DLM
+  hosts: localhost
+  gather_facts: false
+  become: true
+
+  vars:
+    region: "us-east-1"
+    filters: {"image-type": "machine", "is-public": "false"}
+
+  roles:
+    - role: find_ami
+
+  tasks:
+    - name: Filter AMIs within time range and exclude DLM managed
+      set_fact:
+        amis_to_delete: "{{ ami_list.images
+                            | selectattr('creation_date', '>=', start_time_utc)
+                            | selectattr('creation_date', '<=', end_time_utc)
+                            | rejectattr('tags.dlm:managed', 'defined') }}"
+
+    - name: Include delete_ami role to delete filtered AMIs
+      include_role:
+        name: delete_ami
+      vars:
+        ami_ids: "{{ amis_to_delete | map(attribute='image_id') | list }}"
+

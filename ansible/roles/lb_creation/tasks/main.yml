@@ -1,0 +1,11 @@
+---
+- name: Create Load Balancer
+  amazon.aws.elb:
+    name: "{{ lb_name }}"
+    state: present
+    subnets: "{{ subnets }}"
+    security_group_names: "{{ sg_name }}"
+    region: "{{ region }}"
+    scheme: "{{ lb_scheme }}"
+  register: load_balancer
+

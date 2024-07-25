@@ -1,0 +1,2 @@
+lb_type: "public"  # Or "private"
+lb_name: "my_load_balancer"

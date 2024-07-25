@@ -1,0 +1,46 @@
+---
+    - name: Create target group for web servers (public)
+      community.aws.elb_target_group:
+        name: my-public-alb-target-group
+        port: 80
+        protocol: HTTP
+        target_type: instance
+        vpc_id: "{{ vpc_id }}"
+        health_check_path: /
+        health_check_interval: 30
+        health_check_timeout: 5
+        healthy_threshold_count: 2
+        unhealthy_threshold_count: 5
+        state: present
+        health_check_protocol: HTTP  # Added this parameter
+      register: public_target_group
+
+    - name: Create security group for Public ALB
+      amazon.aws.ec2_security_group:
+        name: my-public-alb-sg
+        description: "Security group for Public ALB"
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ region }}"
+        rules:
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0  # Consider restricting access in production
+
+      register: public_sg
+
+    - name: Create a Public Application Load Balancer
+      community.aws.elb_application_lb:
+        name: my-public-alb
+        security_groups:
+          - "{{ public_sg.group_id }}"
+        subnets: "{{ public_subnets }}"
+        scheme: internet-facing
+        listeners:
+          - Protocol: HTTP
+            Port: 80
+            DefaultActions:
+              - Type: forward
+                TargetGroupArn: "{{ public_target_group.target_group_arn }}"
+      register: public_alb
+

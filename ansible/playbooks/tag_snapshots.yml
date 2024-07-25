@@ -1,0 +1,23 @@
+---
+- name: Copy AMI tags to its snapshots
+  hosts: localhost
+  gather_facts: no
+  vars:
+    region: us-east-1
+  tasks:
+    - name: get ami
+      include_role:
+        name: "/vagrant/ansible/roles/find_ami"
+      vars:
+        filters: {"image-type": "machine", "is-public": "false"}
+    - set_fact:
+        ami_ids: "{{ami_list.images | selectattr('tags.dlm:managed', 'undefined') | selectattr('tags.app_version', 'defined') | selectattr('tags.app_version', 'equalto', 'no-version') |  map(attribute='image_id') | list}}"
+    - debug:
+        msg: "{{ami_ids}}"
+
+    - name: Include roles in a nested loop
+      include_role:
+        name: "/vagrant/ansible/roles/ami_snapshot_tag"
+      vars:
+        ami_id: "{{ item }}"
+      loop: "{{ami_ids}}"

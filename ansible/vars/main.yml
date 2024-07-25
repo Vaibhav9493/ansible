@@ -1,0 +1,27 @@
+# Security Group Variables
+sg_name: "MySecurityGroup"
+sg_description: "My custom security group"
+vpc_id: "vpc-0a338c084dc54792f"
+region: "us-east-1"
+sg_rules:
+  - proto: tcp
+    from_port: 22
+    to_port: 22
+    cidr_ip: 0.0.0.0/0
+  - proto: tcp
+    from_port: 80
+    to_port: 80
+    cidr_ip: 0.0.0.0/0
+
+# Load Balancer Variables
+lb_name: "MyLoadBalancer"
+lb_scheme: "internet-facing"  # Change to "internal" for private
+subnets:
+  - subnet-0adf93d205afb6ca5
+  - subnet-08ee4ea94718bc026
+
+# Target Group Variables
+target_group_name: "MyTargetGroup"
+target_group_protocol: "HTTP"
+target_group_port: 80
+

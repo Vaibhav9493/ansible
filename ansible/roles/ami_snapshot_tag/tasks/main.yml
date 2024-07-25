@@ -1,0 +1,36 @@
+---
+- name: Get AMI information
+  amazon.aws.ec2_ami_info:
+    region: "{{ region }}"
+    image_ids:
+      - "{{ ami_id }}"
+  register: ami_info
+
+- name: Extract AMI tags
+  set_fact:
+    ami_tags: "{{ ami_info.images[0].tags | default({}) }}"
+
+- name: Debug AMI Tags
+  debug:
+    msg: "{{ ami_tags }}"
+
+- name: Get snapshots for AMI
+  amazon.aws.ec2_snapshot_info:
+    region: "{{ region }}"
+    filters:
+      owner-id: "{{ ami_info.images[0].owner_id }}"
+      description: "Created by CreateImage(*) for {{ ami_id }}"
+  register: snapshot_info
+
+- name: Debug Snapshot Information
+  debug:
+    msg: "{{ snapshot_info }}"
+
+- name: Tag snapshots with AMI tags
+  amazon.aws.ec2_tag:
+    region: "{{ region }}"
+    resource: "{{ item.snapshot_id }}"
+    tags: "{{ ami_tags }}"
+  loop: "{{ snapshot_info.snapshots }}"
+  when: snapshot_info.snapshots is defined
+

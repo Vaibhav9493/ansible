@@ -1,0 +1,27 @@
+---
+- hosts: "localhost"
+  vars:  
+   asp_name: "test-asp"
+   asp_predefined_metric_type: "ALBRequestCountPerTarget"
+   asp_resource_label: "app/test-asg-1/eb7d1a309c03f105/test-asg-1/cf7ccd1a5336cb08"
+   asp_disable_scalein: false
+   asg_name: "test-asg"
+   asp_cooldown: 300
+   asp_region: "us-east-1"
+   asp_target_value: 100
+  tasks:
+   - name: Create TargetTracking predefined policy
+     local_action:
+      module: community.aws.autoscaling_policy
+      name: "{{ asp_name }}"
+      policy_type: TargetTrackingScaling
+      target_tracking_config:
+         predefined_metric_spec:
+            predefined_metric_type: "{{asp_predefined_metric_type}}"
+            resource_label: "{{asp_resource_label if asp_predefined_metric_type == 'ALBRequestCountPerTarget' else omit }}"
+         target_value: "{{ asp_target_value }}"
+         disable_scalein: "{{ asp_disable_scalein }}"
+      asg_name: "{{ asg_name }}"
+      cooldown: "{{asp_cooldown}}"
+      region: "{{ asp_region }}"
+     register: "asp_details"

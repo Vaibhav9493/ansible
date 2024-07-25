@@ -1,0 +1,46 @@
+---
+- name: Initialize the list of filtered AMIs
+  set_fact:
+    filtered_amis: []
+
+- name: Filter AMIs excluding those with "Name" containing "-p-" and "dlm:managed"
+  set_fact:
+    filtered_amis: >-
+      {{
+        filtered_amis + [item.image_id]
+      }}
+  loop: "{{ ami_list.images }}"
+  when: >
+    not ( any(tag['Key'] == 'Name' and '-p-' in tag['Value'] for tag in item['tags']) or 
+          any(tag['Key'] == 'dlm:managed' for tag in item['tags']) )
+
+- name: Display filtered AMIs
+  debug:
+    var: filtered_amis
+
+- name: Retrieve snapshots for filtered AMIs
+  amazon.aws.ec2_snapshot_info:  
+    region: "{{ region }}"
+  register: all_snapshots
+
+- name: Filter snapshots associated with the filtered AMIs
+  set_fact:
+    ami_snapshot_list: >-
+      {{
+        filtered_amis | map(attribute='image_id') |
+        map('regex_search', '({{ item }}.*)') |
+        map('search', all_snapshots.snapshots) |
+        map('first')
+      }}
+
+- name: Display filtered AMIs and their snapshots
+  debug:
+    msg: "AMI: {{ item.ami }} Snapshots: {{ item.snapshots }}"
+  loop: >-
+    {{
+      filtered_amis | map(attribute='image_id') |
+      zip(ami_snapshot_list) |
+      map('list') |
+      map('combine', [{'ami': '', 'snapshots': ''}])
+    }}
+

@@ -1,0 +1,6 @@
+vpc_id: "vpc-0a338c084dc54792f"
+region: "us-east-1"
+public_subnets:
+  - "subnet-0adf93d205afb6ca5"
+  - "subnet-08ee4ea94718bc026"
+

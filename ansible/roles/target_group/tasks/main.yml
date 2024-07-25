@@ -1,0 +1,10 @@
+---
+- name: Create Target Group
+  amazon.aws.elb_target_group:
+    name: "{{ target_group_name }}"
+    protocol: "{{ target_group_protocol }}"
+    port: "{{ target_group_port }}"
+    vpc_id: "{{ vpc_id }}"
+    region: "{{ region }}"
+  register: target_group
+

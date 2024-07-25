@@ -1,0 +1,15 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+
+  collections:
+    - amazon.aws  # You might need both for backward compatibility
+    - community.aws
+
+  vars:
+    # Define which type of LB to create (public or private)
+    lb_type: "public"  # Change to "private" for private LB
+
+  roles:
+    - "{{ lb_type }}_lb"  # write here if public or private

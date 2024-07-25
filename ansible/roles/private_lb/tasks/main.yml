@@ -1,0 +1,35 @@
+---
+    - name: Create target group for web servers (private)
+      community.aws.elb_target_group:
+        name: my-private-alb-target-group
+        port: 80
+        protocol: HTTP
+        target_type: instance
+        vpc_id: "{{ vpc_id }}"
+        health_check_path: /
+        health_check_interval: 30
+        health_check_timeout: 5
+        healthy_threshold_count: 2
+        unhealthy_threshold_count: 5
+        state: present
+        health_check_protocol: HTTP  # Added this parameter
+      register: private_target_group
+
+    - name: Create security group for Private ALB
+      amazon.aws.ec2_security_group:
+        name: my-private-alb-sg
+        description: "Security group for Private ALB"
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ region }}"
+        rules:
+          # Allow access from your internal network or specific sources
+          # - proto: tcp
+          #   from_port: 80
+          #   to_port: 80
+          #   cidr_ip: 10.0.0.0/16  # Replace with your internal network CIDR
+      register: private_sg
+
+    - name: Create a Private Application Load Balancer
+      community.aws.elb_application_lb:
+        name: my-private-alb
+

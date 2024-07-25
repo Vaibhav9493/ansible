@@ -1,0 +1,21 @@
+---
+- name: Installing nginx webserver on VM
+  hosts: webservers
+  become: yes
+  roles:
+    - update
+
+- name: Installing nginx webserver on VM
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install latest version of nginx
+      dnf: 
+        name: nginx
+        state: latest
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+

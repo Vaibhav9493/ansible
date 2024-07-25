@@ -1,0 +1,63 @@
+---
+- name: Create Private Load Balancer in AWS
+  hosts: localhost
+  become: true
+  connection: local
+
+  collections:
+    - amazon.aws  # You might need both for backward compatibility
+    - community.aws
+
+  vars:
+    vpc_id: "vpc-0a338c084dc54792f"
+    region: "us-east-1"
+    private_subnets:
+      - "subnet-0f62621ffa7718e66"  # Include both private subnets
+      - "subnet-0e33753af7c3ac2f5"
+
+  tasks:
+    - name: Create target group for web servers (private)
+      community.aws.elb_target_group:
+        name: my-private-alb-target-group
+        port: 80
+        protocol: HTTP
+        target_type: instance
+        vpc_id: "{{ vpc_id }}"
+        health_check_path: /
+        health_check_interval: 30
+        health_check_timeout: 5
+        healthy_threshold_count: 2
+        unhealthy_threshold_count: 5
+        state: present
+        health_check_protocol: HTTP  # Added this parameter
+      register: private_target_group
+
+    - name: Create security group for Private ALB
+      amazon.aws.ec2_security_group:
+       name: my-private-alb-sg
+       description: "Security group for Private ALB"
+       vpc_id: "{{ vpc_id }}"
+       region: "{{ region }}"
+       rules:
+         # Allow access from your internal network or specific sources (commented out)
+         # - proto: tcp
+         #   from_port: 80
+         #   to_port: 80
+         #   cidr_ip: 10.0.0.0/16  # Replace with your internal network CIDR
+      register: private_sg  # Register the output as private_sg
+
+    - name: Create a Private Application Load Balancer
+      community.aws.elb_application_lb:
+        name: my-private-alb
+        security_groups:
+          - "{{ private_sg.group_id }}"  # Use the output from the previous task
+        subnets: "{{ private_subnets }}"
+        scheme: internal
+        listeners:
+          - Protocol: HTTP
+            Port: 80
+            DefaultActions:
+              - Type: forward
+                TargetGroupArn: "{{ private_target_group.target_group_arn }}"
+      register: private_alb
+
