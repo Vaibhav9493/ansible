@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+    
+    environment {
+        // Define AWS credentials from Jenkins credentials
+        AWS_ACCESS_KEY_ID = credentials('accesskey1')
+        AWS_SECRET_ACCESS_KEY = credentials('accesskey1')
+    }
+    
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    def branchName = 'main' // Specify the branch to clone
+                    echo "Cloning repository using branch: ${branchName}"
+                    git branch: branchName, url: 'https://github.com/Vaibhav9493/ansible.git'
+                }
+            }
+        }
+        
+        stage('Run Ansible Playbook') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'accesskey1']]) {
+                    sh '''
+                        echo "Running Ansible Playbook..."
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        ansible-playbook -i ansible/playbooks/hosts ansible/playbooks/tag_snapshots.yml
+                    '''
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
